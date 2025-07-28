@@ -2,7 +2,6 @@
 
 import Head from "next/head"
 import type { GetServerSideProps } from "next"
-import { useState, useEffect } from "react"
 import { Layout } from "@/components/layout/layout"
 import { requireAuth, type AuthUser } from "@/lib/auth-utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { IncomeExpenseChart } from "@/components/reports/income-expense-chart"
 import { CategoryStats } from "@/components/reports/category-stats"
 import { Download, BarChart3, TrendingUp, TrendingDown, DollarSign } from "lucide-react"
+import { useState } from "react"
 
 interface ReportData {
   summary: {
@@ -37,35 +37,14 @@ interface ReportData {
 
 interface ReportsProps {
   user: AuthUser
+  initialReportData: ReportData | null
 }
 
-export default function Reports({ user }: ReportsProps) {
-  const [reportData, setReportData] = useState<ReportData | null>(null)
+export default function Reports({ user, initialReportData }: ReportsProps) {
+  const [reportData, setReportData] = useState(initialReportData)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState("month")
   const [downloading, setDownloading] = useState(false)
-
-  useEffect(() => {
-    fetchReportData()
-  }, [period])
-
-  const fetchReportData = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/admin/reports?period=${period}`)
-      const data = await response.json()
-
-      if (response.ok) {
-        setReportData(data)
-      } else {
-        console.error("Error fetching report data:", data.error)
-      }
-    } catch (error) {
-      console.error("Error fetching report data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleDownloadCSV = async () => {
     try {
@@ -216,11 +195,20 @@ export default function Reports({ user }: ReportsProps) {
   )
 }
 
+// getServerSideProps obtiene los datos del reporte
 export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
-    return await requireAuth(context, { requiredRole: "ADMIN" })
+    const auth = await requireAuth(context, { requiredRole: "ADMIN" })
+    // Aquí haz fetch a tu API o DB para obtener los datos iniciales
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/reports?period=month`)
+    const initialReportData = await res.json()
+    return {
+      props: {
+        ...auth.props,
+        initialReportData,
+      },
+    }
   } catch (error) {
-    console.error("Error in getServerSideProps:", error)
     return {
       redirect: {
         destination: "/auth/signin",
