@@ -71,36 +71,60 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 4. Selecciona "Next.js" como framework
 
 #### 2. Configurar Variables de Entorno
-En la sección "Environment Variables" agrega:
+En la sección "Environment Variables" agrega **UNA POR UNA**:
 
-\`\`\`env
-# Base de datos
-DATABASE_URL=postgresql://usuario:password@host:5432/database
-
-# GitHub OAuth
-GITHUB_CLIENT_ID=tu_github_client_id
-GITHUB_CLIENT_SECRET=tu_github_client_secret
-
-# Autenticación
-BETTER_AUTH_SECRET=tu_clave_secreta_generada
-NEXT_PUBLIC_BETTER_AUTH_URL=https://tu-dominio.vercel.app
-
-# Supabase (opcional)
-NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
+**Variables de Base de Datos:**
+\`\`\`
+Name: DATABASE_URL
+Value: postgresql://usuario:password@host:5432/database
+Environment: Production, Preview, Development
 \`\`\`
 
-#### 3. Configurar Build Settings
-\`\`\`json
-{
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "installCommand": "npm install",
-  "devCommand": "npm run dev"
-}
+**Variables de GitHub OAuth:**
+\`\`\`
+Name: GITHUB_CLIENT_ID
+Value: tu_github_client_id
+Environment: Production, Preview, Development
 \`\`\`
 
-#### 4. Deploy
+\`\`\`
+Name: GITHUB_CLIENT_SECRET
+Value: tu_github_client_secret
+Environment: Production, Preview, Development
+\`\`\`
+
+**Variables de Autenticación:**
+\`\`\`
+Name: BETTER_AUTH_SECRET
+Value: tu_clave_secreta_generada_de_32_caracteres
+Environment: Production, Preview, Development
+\`\`\`
+
+\`\`\`
+Name: NEXT_PUBLIC_BETTER_AUTH_URL
+Value: https://tu-dominio.vercel.app
+Environment: Production, Preview
+\`\`\`
+
+\`\`\`
+Name: NEXT_PUBLIC_BETTER_AUTH_URL
+Value: http://localhost:3000
+Environment: Development
+\`\`\`
+
+**Variables de Supabase (Opcional):**
+\`\`\`
+Name: NEXT_PUBLIC_SUPABASE_URL
+Value: https://tu-proyecto.supabase.co
+Environment: Production, Preview, Development
+\`\`\`
+
+Name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+Value: tu_supabase_anon_key
+Environment: Production, Preview, Development
+\`\`\`
+
+#### 3. Deploy
 1. Click "Deploy"
 2. Espera a que termine el build
 3. Vercel te dará una URL como `https://mi-proyecto-abc123.vercel.app`
@@ -119,6 +143,13 @@ vercel login
 
 # Deploy desde el directorio del proyecto
 vercel
+
+# Configurar variables de entorno
+vercel env add DATABASE_URL
+vercel env add GITHUB_CLIENT_ID
+vercel env add GITHUB_CLIENT_SECRET
+vercel env add BETTER_AUTH_SECRET
+vercel env add NEXT_PUBLIC_BETTER_AUTH_URL
 
 # Para producción
 vercel --prod
@@ -144,6 +175,44 @@ vercel --prod
 2. Agrega tu dominio personalizado
 3. Configura DNS según las instrucciones
 4. Actualiza las URLs de GitHub OAuth
+
+## ⚠️ Solución de Problemas Comunes
+
+### Error: "Environment Variable references Secret which does not exist"
+
+**Problema:** Vercel no puede encontrar los secretos referenciados.
+
+**Solución:**
+1. **NO uses** referencias a secretos como `@database_url` en `vercel.json`
+2. **Configura las variables directamente** en Vercel Dashboard
+3. **Elimina** la sección `env` del `vercel.json`
+
+### Error: "Build failed"
+
+**Problema:** El build falla durante el despliegue.
+
+**Solución:**
+1. Verifica que `npm run build` funciona localmente
+2. Revisa los logs en Vercel Dashboard
+3. Asegúrate de que todas las variables de entorno están configuradas
+
+### Error: "Database connection failed"
+
+**Problema:** No se puede conectar a la base de datos.
+
+**Solución:**
+1. Verifica que `DATABASE_URL` está correctamente configurada
+2. Asegúrate de que la base de datos acepta conexiones externas
+3. Verifica que las migraciones se aplicaron
+
+### Error: "GitHub OAuth failed"
+
+**Problema:** La autenticación con GitHub no funciona.
+
+**Solución:**
+1. Verifica que `GITHUB_CLIENT_ID` y `GITHUB_CLIENT_SECRET` están configurados
+2. Actualiza las URLs de callback en GitHub OAuth App
+3. Verifica que `NEXT_PUBLIC_BETTER_AUTH_URL` apunta al dominio correcto
 
 ## ✅ Verificación del Despliegue
 
@@ -344,3 +413,28 @@ module.exports = {
 ---
 
 **¡Tu aplicación está lista para producción! 🎉**
+
+\`\`\`
+
+```plaintext file=".env.example"
+# Base de datos
+DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/mi_proyecto"
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL="tu_supabase_url"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="tu_supabase_anon_key"
+
+# GitHub OAuth
+GITHUB_CLIENT_ID="tu_github_client_id"
+GITHUB_CLIENT_SECRET="tu_github_client_secret"
+
+# Better Auth
+BETTER_AUTH_SECRET="una_clave_secreta_muy_larga_y_segura_de_al_menos_32_caracteres"
+NEXT_PUBLIC_BETTER_AUTH_URL="http://localhost:3000"
+
+# Para producción en Vercel
+# NEXT_PUBLIC_BETTER_AUTH_URL="https://tu-dominio.vercel.app"
+
+# IMPORTANTE: En Vercel, configura estas variables directamente en:
+# Dashboard > Settings > Environment Variables
+# NO uses referencias a secretos como @database_url
