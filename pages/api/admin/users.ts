@@ -28,6 +28,12 @@ export default withAuth(
                 mode: "insensitive",
               },
             },
+            {
+              phone: {
+                contains: search as string,
+                mode: "insensitive",
+              },
+            },
           ]
         }
 
@@ -39,6 +45,7 @@ export default withAuth(
             email: true,
             name: true,
             image: true,
+            phone: true,
             role: true,
             createdAt: true,
             updatedAt: true,
@@ -72,7 +79,7 @@ export default withAuth(
       }
     } else if (req.method === "PATCH") {
       try {
-        const { userId, name, role } = req.body
+        const { userId, name, phone, role } = req.body
 
         if (!userId) {
           return res.status(400).json({ error: "userId es requerido" })
@@ -84,6 +91,7 @@ export default withAuth(
 
         const updateData: any = {}
         if (name !== undefined) updateData.name = name
+        if (phone !== undefined) updateData.phone = phone
         if (role !== undefined) updateData.role = role
 
         const updatedUser = await prisma.user.update({
@@ -94,6 +102,7 @@ export default withAuth(
             email: true,
             name: true,
             image: true,
+            phone: true,
             role: true,
             createdAt: true,
             updatedAt: true,

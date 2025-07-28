@@ -20,6 +20,7 @@ interface User {
   id: string
   name: string | null
   email: string
+  phone: string | null
   role: string
 }
 
@@ -27,12 +28,13 @@ interface UserFormProps {
   user: User | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: { name: string; role: string }) => Promise<void>
+  onSubmit: (data: { name: string; phone: string; role: string }) => Promise<void>
 }
 
 export function UserForm({ user, open, onOpenChange, onSubmit }: UserFormProps) {
   const [formData, setFormData] = useState({
     name: user?.name || "",
+    phone: user?.phone || "",
     role: user?.role || "USER",
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -68,6 +70,15 @@ export function UserForm({ user, open, onOpenChange, onSubmit }: UserFormProps) 
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Nombre completo"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone">Teléfono</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="Número de teléfono"
               />
             </div>
             <div>

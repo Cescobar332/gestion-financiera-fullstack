@@ -12,13 +12,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { UserForm } from "@/components/users/user-form"
-import { Search, Edit, UsersIcon, UserCheck, UserX } from "lucide-react"
+import { Search, Edit, UsersIcon, UserCheck, UserX, Phone } from "lucide-react"
 
 interface User {
   id: string
   email: string
   name: string | null
   image: string | null
+  phone: string | null
   role: string
   createdAt: string
   updatedAt: string
@@ -61,7 +62,7 @@ export default function Users({ user }: UsersProps) {
     }
   }
 
-  const handleUpdateUser = async (formData: { name: string; role: string }) => {
+  const handleUpdateUser = async (formData: { name: string; phone: string; role: string }) => {
     if (!editingUser) return
 
     const response = await fetch("/api/admin/users", {
@@ -90,7 +91,11 @@ export default function Users({ user }: UsersProps) {
 
   const filteredUsers = users.filter((u) => {
     const searchLower = searchTerm.toLowerCase()
-    return u.email.toLowerCase().includes(searchLower) || (u.name && u.name.toLowerCase().includes(searchLower))
+    return (
+      u.email.toLowerCase().includes(searchLower) ||
+      (u.name && u.name.toLowerCase().includes(searchLower)) ||
+      (u.phone && u.phone.toLowerCase().includes(searchLower))
+    )
   })
 
   const totalUsers = users.length
@@ -147,7 +152,7 @@ export default function Users({ user }: UsersProps) {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Buscar por nombre o email..."
+                  placeholder="Buscar por nombre, email o teléfono..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -178,6 +183,7 @@ export default function Users({ user }: UsersProps) {
                     <TableRow>
                       <TableHead>Usuario</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Teléfono</TableHead>
                       <TableHead>Rol</TableHead>
                       <TableHead>Transacciones</TableHead>
                       <TableHead>Fecha de Registro</TableHead>
@@ -202,6 +208,12 @@ export default function Users({ user }: UsersProps) {
                           </div>
                         </TableCell>
                         <TableCell>{u.email}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                            {u.phone || "No especificado"}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>{u.role}</Badge>
                         </TableCell>
