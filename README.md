@@ -3,7 +3,7 @@
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/tu-usuario/mi-proyecto-nextjs)
 [![Tests](https://github.com/tu-usuario/mi-proyecto-nextjs/actions/workflows/test.yml/badge.svg)](https://github.com/tu-usuario/mi-proyecto-nextjs/actions/workflows/test.yml)
 
-> **🌐 Demo en vivo**: [https://mi-proyecto-financiero.vercel.app](https://mi-proyecto-financiero.vercel.app)
+> **🌐 Demo en vivo**: [https://gestion-financiera-fullstack.vercel.app](https://gestion-financiera-fullstack.vercel.app)
 
 ## 📋 Descripción
 
