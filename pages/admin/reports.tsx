@@ -217,5 +217,15 @@ export default function Reports({ user }: ReportsProps) {
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  return requireAuth(context, { requiredRole: "ADMIN" })
+  try {
+    return await requireAuth(context, { requiredRole: "ADMIN" })
+  } catch (error) {
+    console.error("Error in getServerSideProps:", error)
+    return {
+      redirect: {
+        destination: "/auth/signin",
+        permanent: false,
+      },
+    }
+  }
 }

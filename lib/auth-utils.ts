@@ -17,6 +17,12 @@ export async function getServerSession(
   res: NextApiResponse | GetServerSidePropsContext["res"],
 ) {
   try {
+    // Durante el build, no hay cookies disponibles
+    if (!req.cookies) {
+      console.log("No cookies available during build")
+      return null
+    }
+
     const sessionToken = req.cookies["session-token"]
 
     if (!sessionToken) {
@@ -25,6 +31,12 @@ export async function getServerSession(
     }
 
     console.log("Session token found:", sessionToken.substring(0, 10) + "...")
+
+    // Durante el build, evitar consultas a la base de datos
+    if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+      console.log("Skipping database query during build")
+      return null
+    }
 
     const session = await prisma.session.findUnique({
       where: { sessionToken },
@@ -90,6 +102,7 @@ export function withAuth(
   return async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       console.log("withAuth middleware called for:", req.url)
+
       const sessionData = await getServerSession(req, res)
 
       if (!sessionData) {
@@ -123,36 +136,58 @@ export async function requireAuth(
   },
 ) {
   console.log("requireAuth called for:", context.resolvedUrl)
-  const sessionData = await getServerSession(context.req, context.res)
 
-  if (!sessionData) {
-    console.log("No session, redirecting to signin")
+  try {
+    // Durante el build, redirigir a signin por defecto
+    if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+      console.log("Build time - redirecting to signin")
+      return {
+        redirect: {
+          destination: options?.redirectTo || "/auth/signin",
+          permanent: false,
+        },
+      }
+    }
+
+    const sessionData = await getServerSession(context.req, context.res)
+
+    if (!sessionData) {
+      console.log("No session, redirecting to signin")
+      return {
+        redirect: {
+          destination: options?.redirectTo || "/auth/signin",
+          permanent: false,
+        },
+      }
+    }
+
+    const { user } = sessionData
+
+    // Verificar rol si es requerido
+    if (options?.requiredRole && !hasRole(user, options.requiredRole)) {
+      console.log("Insufficient role, redirecting to unauthorized")
+      return {
+        redirect: {
+          destination: "/unauthorized",
+          permanent: false,
+        },
+      }
+    }
+
+    console.log("requireAuth passed for user:", user.email)
+
+    return {
+      props: {
+        user,
+      },
+    }
+  } catch (error) {
+    console.error("Error in requireAuth:", error)
     return {
       redirect: {
         destination: options?.redirectTo || "/auth/signin",
         permanent: false,
       },
     }
-  }
-
-  const { user } = sessionData
-
-  // Verificar rol si es requerido
-  if (options?.requiredRole && !hasRole(user, options.requiredRole)) {
-    console.log("Insufficient role, redirecting to unauthorized")
-    return {
-      redirect: {
-        destination: "/unauthorized",
-        permanent: false,
-      },
-    }
-  }
-
-  console.log("requireAuth passed for user:", user.email)
-
-  return {
-    props: {
-      user,
-    },
   }
 }

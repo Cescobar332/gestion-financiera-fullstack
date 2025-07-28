@@ -1,440 +1,219 @@
-# 🚀 Guía de Despliegue en Vercel
+# Guía de Despliegue en Vercel
+
+Esta guía te ayudará a desplegar la aplicación Next.js en Vercel paso a paso.
 
 ## 📋 Prerrequisitos
 
-### 1. Cuentas Necesarias
-- ✅ **GitHub Account** - Para el código fuente
-- ✅ **Vercel Account** - Para el despliegue
-- ✅ **GitHub OAuth App** - Para autenticación
-- ✅ **Base de datos PostgreSQL** - Supabase, Neon, o similar
+Antes de comenzar, asegúrate de tener:
 
-### 2. Configuración Local Funcionando
-- ✅ Proyecto corriendo en `http://localhost:3000`
-- ✅ Base de datos configurada y migraciones aplicadas
-- ✅ Autenticación con GitHub funcionando localmente
-- ✅ Pruebas pasando: `npm test`
+- ✅ Cuenta en [Vercel](https://vercel.com)
+- ✅ Cuenta en [GitHub](https://github.com)
+- ✅ Base de datos PostgreSQL (Supabase/Neon recomendado)
+- ✅ Código subido a un repositorio de GitHub
 
-## 🔧 Configuración Previa al Despliegue
+## 🚀 Pasos de Despliegue
 
-### 1. Configurar GitHub OAuth App
+### 1. Preparar el Repositorio
 
-#### Crear OAuth App en GitHub:
-1. Ve a [GitHub Settings > Developer settings > OAuth Apps](https://github.com/settings/applications/new)
-2. Completa los campos:
-   \`\`\`
-   Application name: Mi Proyecto Financiero
-   Homepage URL: https://tu-dominio.vercel.app
-   Authorization callback URL: https://tu-dominio.vercel.app/api/auth/callback/github
-   \`\`\`
-3. Guarda el `Client ID` y `Client Secret`
-
-#### Para desarrollo local también configura:
-\`\`\`
-Authorization callback URL: http://localhost:3000/api/auth/callback/github
+\`\`\`bash
+# Asegúrate de que todos los cambios estén committeados
+git add .
+git commit -m "Preparar para despliegue en Vercel"
+git push origin main
 \`\`\`
 
-### 2. Preparar Base de Datos
+### 2. Conectar con Vercel
 
-#### Opción A: Supabase (Recomendado)
-1. Crea proyecto en [Supabase](https://supabase.com)
-2. Ve a Settings > Database
-3. Copia la `Connection String` (modo Direct connection)
-4. Ejecuta las migraciones:
-   \`\`\`bash
-   npm run db:push
-   \`\`\`
+1. Ve a [vercel.com](https://vercel.com) e inicia sesión
+2. Haz clic en "New Project"
+3. Importa tu repositorio de GitHub
+4. Vercel detectará automáticamente que es un proyecto Next.js
+
+### 3. Configurar Variables de Entorno
+
+**⚠️ IMPORTANTE**: Configura las variables directamente en Vercel Dashboard, NO uses referencias a secretos.
+
+Ve a **Project Settings** → **Environment Variables** y agrega:
+
+#### Variables Requeridas:
+
+\`\`\`env
+# Base de datos
+DATABASE_URL=postgresql://usuario:password@host:puerto/database
+
+# Autenticación GitHub
+GITHUB_CLIENT_ID=tu_github_client_id
+GITHUB_CLIENT_SECRET=tu_github_client_secret
+
+# Better Auth
+BETTER_AUTH_SECRET=tu_secret_de_32_caracteres_minimo
+NEXT_PUBLIC_BETTER_AUTH_URL=https://tu-dominio.vercel.app
+
+# Next.js
+NEXTAUTH_URL=https://tu-dominio.vercel.app
+NEXTAUTH_SECRET=otro_secret_de_32_caracteres
+\`\`\`
+
+#### Para cada variable:
+1. Haz clic en "Add New"
+2. Ingresa el **Name** y **Value**
+3. Selecciona los entornos: **Production**, **Preview**, **Development**
+4. Haz clic en "Save"
+
+### 4. Configurar GitHub OAuth App
+
+1. Ve a GitHub → Settings → Developer settings → OAuth Apps
+2. Haz clic en "New OAuth App"
+3. Completa:
+   - **Application name**: Mi Proyecto Financiero
+   - **Homepage URL**: `https://tu-dominio.vercel.app`
+   - **Authorization callback URL**: `https://tu-dominio.vercel.app/api/auth/callback/github`
+4. Copia el **Client ID** y **Client Secret** a las variables de Vercel
+
+### 5. Configurar Base de Datos
+
+#### Opción A: Supabase
+1. Ve a [supabase.com](https://supabase.com)
+2. Crea un nuevo proyecto
+3. Ve a Settings → Database
+4. Copia la **Connection String** (URI)
+5. Úsala como `DATABASE_URL` en Vercel
 
 #### Opción B: Neon
-1. Crea proyecto en [Neon](https://neon.tech)
-2. Copia la connection string
-3. Aplica migraciones
+1. Ve a [neon.tech](https://neon.tech)
+2. Crea un nuevo proyecto
+3. Copia la **Connection String**
+4. Úsala como `DATABASE_URL` en Vercel
 
-#### Opción C: Railway/PlanetScale
-Similar proceso, obtén la connection string y aplica migraciones.
+### 6. Ejecutar Migraciones
 
-### 3. Generar Secretos
+Después del primer despliegue, ejecuta las migraciones:
 
-#### Better Auth Secret:
 \`\`\`bash
-# Generar clave secreta aleatoria
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# Localmente con la URL de producción
+DATABASE_URL="tu_database_url_de_produccion" npx prisma db push
 \`\`\`
 
-## 🚀 Despliegue en Vercel
+O usa el script SQL directamente en tu base de datos:
 
-### Método 1: Desde GitHub (Recomendado)
-
-#### 1. Conectar Repositorio
-1. Ve a [Vercel Dashboard](https://vercel.com/dashboard)
-2. Click "New Project"
-3. Importa tu repositorio de GitHub
-4. Selecciona "Next.js" como framework
-
-#### 2. Configurar Variables de Entorno
-En la sección "Environment Variables" agrega **UNA POR UNA**:
-
-**Variables de Base de Datos:**
-\`\`\`
-Name: DATABASE_URL
-Value: postgresql://usuario:password@host:5432/database
-Environment: Production, Preview, Development
+\`\`\`sql
+-- Ejecuta el contenido de scripts/init-database.sql
+-- en tu consola de base de datos
 \`\`\`
 
-**Variables de GitHub OAuth:**
-\`\`\`
-Name: GITHUB_CLIENT_ID
-Value: tu_github_client_id
-Environment: Production, Preview, Development
-\`\`\`
+### 7. Desplegar
 
-\`\`\`
-Name: GITHUB_CLIENT_SECRET
-Value: tu_github_client_secret
-Environment: Production, Preview, Development
-\`\`\`
-
-**Variables de Autenticación:**
-\`\`\`
-Name: BETTER_AUTH_SECRET
-Value: tu_clave_secreta_generada_de_32_caracteres
-Environment: Production, Preview, Development
-\`\`\`
-
-\`\`\`
-Name: NEXT_PUBLIC_BETTER_AUTH_URL
-Value: https://tu-dominio.vercel.app
-Environment: Production, Preview
-\`\`\`
-
-\`\`\`
-Name: NEXT_PUBLIC_BETTER_AUTH_URL
-Value: http://localhost:3000
-Environment: Development
-\`\`\`
-
-**Variables de Supabase (Opcional):**
-\`\`\`
-Name: NEXT_PUBLIC_SUPABASE_URL
-Value: https://tu-proyecto.supabase.co
-Environment: Production, Preview, Development
-\`\`\`
-
-Name: NEXT_PUBLIC_SUPABASE_ANON_KEY
-Value: tu_supabase_anon_key
-Environment: Production, Preview, Development
-\`\`\`
-
-#### 3. Deploy
-1. Click "Deploy"
+1. Haz clic en **"Deploy"** en Vercel
 2. Espera a que termine el build
-3. Vercel te dará una URL como `https://mi-proyecto-abc123.vercel.app`
+3. Si hay errores, revisa los logs en la pestaña **"Functions"**
 
-### Método 2: Vercel CLI
-
-#### 1. Instalar Vercel CLI
-\`\`\`bash
-npm i -g vercel
-\`\`\`
-
-#### 2. Login y Deploy
-\`\`\`bash
-# Login a Vercel
-vercel login
-
-# Deploy desde el directorio del proyecto
-vercel
-
-# Configurar variables de entorno
-vercel env add DATABASE_URL
-vercel env add GITHUB_CLIENT_ID
-vercel env add GITHUB_CLIENT_SECRET
-vercel env add BETTER_AUTH_SECRET
-vercel env add NEXT_PUBLIC_BETTER_AUTH_URL
-
-# Para producción
-vercel --prod
-\`\`\`
-
-## 🔧 Configuración Post-Despliegue
-
-### 1. Actualizar GitHub OAuth App
-1. Ve a tu OAuth App en GitHub
-2. Actualiza las URLs:
-   \`\`\`
-   Homepage URL: https://tu-dominio-real.vercel.app
-   Authorization callback URL: https://tu-dominio-real.vercel.app/api/auth/callback/github
-   \`\`\`
-
-### 2. Actualizar Variables de Entorno
-1. En Vercel Dashboard > Settings > Environment Variables
-2. Actualiza `NEXT_PUBLIC_BETTER_AUTH_URL` con tu dominio real
-3. Redeploy el proyecto
-
-### 3. Configurar Dominio Personalizado (Opcional)
-1. En Vercel Dashboard > Settings > Domains
-2. Agrega tu dominio personalizado
-3. Configura DNS según las instrucciones
-4. Actualiza las URLs de GitHub OAuth
-
-## ⚠️ Solución de Problemas Comunes
+## 🔧 Solución de Problemas Comunes
 
 ### Error: "Environment Variable references Secret which does not exist"
 
-**Problema:** Vercel no puede encontrar los secretos referenciados.
+**Solución**: No uses referencias como `@database_url`. Configura las variables directamente:
 
-**Solución:**
-1. **NO uses** referencias a secretos como `@database_url` en `vercel.json`
-2. **Configura las variables directamente** en Vercel Dashboard
-3. **Elimina** la sección `env` del `vercel.json`
-
-### Error: "Build failed"
-
-**Problema:** El build falla durante el despliegue.
-
-**Solución:**
-1. Verifica que `npm run build` funciona localmente
-2. Revisa los logs en Vercel Dashboard
-3. Asegúrate de que todas las variables de entorno están configuradas
-
-### Error: "Database connection failed"
-
-**Problema:** No se puede conectar a la base de datos.
-
-**Solución:**
-1. Verifica que `DATABASE_URL` está correctamente configurada
-2. Asegúrate de que la base de datos acepta conexiones externas
-3. Verifica que las migraciones se aplicaron
-
-### Error: "GitHub OAuth failed"
-
-**Problema:** La autenticación con GitHub no funciona.
-
-**Solución:**
-1. Verifica que `GITHUB_CLIENT_ID` y `GITHUB_CLIENT_SECRET` están configurados
-2. Actualiza las URLs de callback en GitHub OAuth App
-3. Verifica que `NEXT_PUBLIC_BETTER_AUTH_URL` apunta al dominio correcto
-
-## ✅ Verificación del Despliegue
-
-### 1. Pruebas Básicas
-- [ ] ✅ Página principal carga correctamente
-- [ ] ✅ Navegación funciona
-- [ ] ✅ Estilos se aplican correctamente
-
-### 2. Autenticación
-- [ ] ✅ Botón "Iniciar sesión con GitHub" aparece
-- [ ] ✅ Redirección a GitHub funciona
-- [ ] ✅ Callback de GitHub funciona
-- [ ] ✅ Usuario se autentica correctamente
-- [ ] ✅ Menú de usuario aparece después del login
-
-### 3. Funcionalidades Core
-- [ ] ✅ Dashboard carga con datos del usuario
-- [ ] ✅ Página de transacciones funciona
-- [ ] ✅ Formularios de transacciones (solo admin)
-- [ ] ✅ Página de perfil muestra información correcta
-
-### 4. Funcionalidades Admin
-- [ ] ✅ Panel de administración accesible solo para admins
-- [ ] ✅ Gestión de usuarios funciona
-- [ ] ✅ Reportes se generan correctamente
-- [ ] ✅ Exportación CSV funciona
-
-### 5. Seguridad y Permisos
-- [ ] ✅ Usuarios no autenticados son redirigidos
-- [ ] ✅ Usuarios regulares no pueden acceder a admin
-- [ ] ✅ API endpoints respetan permisos
-- [ ] ✅ Sesiones persisten correctamente
-
-### 6. API y Documentación
-- [ ] ✅ `/api-docs` carga correctamente
-- [ ] ✅ Documentación OpenAPI es accesible
-- [ ] ✅ Endpoints de API responden correctamente
-
-## 🐛 Troubleshooting
-
-### Errores Comunes
-
-#### 1. Error de Build
-\`\`\`bash
-# Verificar que el build funciona localmente
-npm run build
-
-# Revisar logs en Vercel Dashboard > Functions > View Function Logs
-\`\`\`
-
-#### 2. Error de Base de Datos
-\`\`\`bash
-# Verificar connection string
-# Asegurar que la base de datos está accesible desde internet
-# Verificar que las migraciones se aplicaron
-\`\`\`
-
-#### 3. Error de Autenticación
-\`\`\`bash
-# Verificar URLs de callback en GitHub OAuth App
-# Verificar variables de entorno en Vercel
-# Revisar logs de función en Vercel
-\`\`\`
-
-#### 4. Error 500 en API Routes
-\`\`\`bash
-# Revisar logs en Vercel Dashboard
-# Verificar que todas las variables de entorno están configuradas
-# Verificar que la base de datos está accesible
-\`\`\`
-
-### Logs y Debugging
-
-#### Ver Logs en Tiempo Real:
-\`\`\`bash
-vercel logs tu-dominio.vercel.app
-\`\`\`
-
-#### Logs en Dashboard:
-1. Ve a Vercel Dashboard
-2. Selecciona tu proyecto
-3. Ve a "Functions" tab
-4. Click en cualquier función para ver logs
-
-## 🔄 CI/CD y Actualizaciones
-
-### Despliegue Automático
-Vercel automáticamente:
-- ✅ Despliega cada push a `main` branch
-- ✅ Crea preview deployments para PRs
-- ✅ Ejecuta builds y tests
-- ✅ Actualiza el dominio de producción
-
-### Configurar Branch Protection
-1. En GitHub: Settings > Branches
-2. Agregar regla para `main`:
-   - Require status checks to pass
-   - Require branches to be up to date
-   - Include administrators
-
-### Rollback
-Si algo sale mal:
-\`\`\`bash
-# Ver deployments
-vercel ls
-
-# Hacer rollback a deployment anterior
-vercel rollback [deployment-url]
-\`\`\`
-
-## 📊 Monitoreo y Analytics
-
-### Vercel Analytics
-1. En Vercel Dashboard > Analytics
-2. Habilitar Web Analytics
-3. Ver métricas de performance
-
-### Error Monitoring
-Considera integrar:
-- **Sentry** - Para tracking de errores
-- **LogRocket** - Para session replay
-- **Vercel Speed Insights** - Para performance
-
-## 🔒 Seguridad en Producción
-
-### Variables de Entorno
-- ✅ Nunca commitear secrets al repositorio
-- ✅ Usar variables de entorno para todos los secrets
-- ✅ Rotar secrets regularmente
-- ✅ Usar diferentes secrets para dev/staging/prod
-
-### Headers de Seguridad
-Vercel automáticamente agrega headers de seguridad, pero puedes personalizar en `next.config.js`:
-
-\`\`\`javascript
-module.exports = {
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
-          },
-        ],
-      },
-    ]
-  },
+❌ **Incorrecto**:
+\`\`\`json
+{
+  "env": {
+    "DATABASE_URL": "@database_url"
+  }
 }
 \`\`\`
 
-## 📈 Performance
+✅ **Correcto**: Configurar directamente en Vercel Dashboard
 
-### Optimizaciones Automáticas de Vercel
-- ✅ Edge Network global
-- ✅ Automatic HTTPS
-- ✅ Image Optimization
-- ✅ Static file caching
-- ✅ Serverless functions
+### Error: "Failed to collect page data"
 
-### Optimizaciones Adicionales
-- ✅ Next.js Image component para imágenes
-- ✅ Dynamic imports para code splitting
-- ✅ ISR (Incremental Static Regeneration) donde sea apropiado
+**Causa**: Problema de conexión a base de datos durante el build.
 
-## 🎯 Checklist Final
+**Solución**:
+1. Verifica que `DATABASE_URL` esté configurada correctamente
+2. Asegúrate de que la base de datos esté accesible
+3. Revisa que las migraciones se hayan ejecutado
 
-### Pre-Deploy
-- [ ] ✅ Código en GitHub
-- [ ] ✅ Tests pasando localmente
-- [ ] ✅ Build exitoso localmente
-- [ ] ✅ Variables de entorno documentadas
-- [ ] ✅ Base de datos configurada
-- [ ] ✅ GitHub OAuth App configurada
+### Error: "GitHub OAuth not working"
 
-### Deploy
-- [ ] ✅ Proyecto importado en Vercel
-- [ ] ✅ Variables de entorno configuradas
-- [ ] ✅ Build exitoso en Vercel
-- [ ] ✅ Dominio asignado
+**Solución**:
+1. Verifica que las URLs de callback sean correctas
+2. Asegúrate de que `GITHUB_CLIENT_ID` y `GITHUB_CLIENT_SECRET` estén configurados
+3. Revisa que `NEXT_PUBLIC_BETTER_AUTH_URL` apunte al dominio correcto
 
-### Post-Deploy
-- [ ] ✅ URLs actualizadas en GitHub OAuth
-- [ ] ✅ Funcionalidades probadas
-- [ ] ✅ Permisos verificados
-- [ ] ✅ Performance verificada
-- [ ] ✅ Documentación actualizada
+### Error: "Prisma Client not found"
+
+**Solución**:
+\`\`\`bash
+# Regenerar el cliente Prisma
+npx prisma generate
+git add .
+git commit -m "Regenerar Prisma client"
+git push
+\`\`\`
+
+## 📊 Verificación Post-Despliegue
+
+### Checklist de Verificación:
+
+- [ ] ✅ La aplicación carga correctamente
+- [ ] ✅ El login con GitHub funciona
+- [ ] ✅ Se pueden crear transacciones
+- [ ] ✅ Los reportes se generan correctamente
+- [ ] ✅ El panel de administrador es accesible
+- [ ] ✅ La documentación API funciona en `/api-docs`
+
+### URLs Importantes:
+
+- **Aplicación**: `https://tu-dominio.vercel.app`
+- **API Docs**: `https://tu-dominio.vercel.app/api-docs`
+- **Admin Panel**: `https://tu-dominio.vercel.app/admin/users`
+
+## 🔄 Actualizaciones Futuras
+
+Para actualizar la aplicación:
+
+\`\`\`bash
+git add .
+git commit -m "Descripción de cambios"
+git push origin main
+\`\`\`
+
+Vercel desplegará automáticamente los cambios.
+
+## 📞 Soporte
+
+Si encuentras problemas:
+
+1. Revisa los logs en Vercel Dashboard → Functions
+2. Verifica las variables de entorno
+3. Consulta la documentación de [Vercel](https://vercel.com/docs)
+4. Revisa la configuración de la base de datos
 
 ---
 
-**¡Tu aplicación está lista para producción! 🎉**
-
+¡Tu aplicación debería estar funcionando correctamente en producción! 🎉
 \`\`\`
 
 ```plaintext file=".env.example"
-# Base de datos
-DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/mi_proyecto"
+# Base de datos PostgreSQL
+DATABASE_URL="postgresql://usuario:password@localhost:5432/mi_proyecto"
 
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL="tu_supabase_url"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="tu_supabase_anon_key"
-
-# GitHub OAuth
+# Autenticación GitHub OAuth
 GITHUB_CLIENT_ID="tu_github_client_id"
 GITHUB_CLIENT_SECRET="tu_github_client_secret"
 
-# Better Auth
-BETTER_AUTH_SECRET="una_clave_secreta_muy_larga_y_segura_de_al_menos_32_caracteres"
+# Better Auth - Generar con: openssl rand -base64 32
+BETTER_AUTH_SECRET="tu_secret_de_32_caracteres_minimo"
 NEXT_PUBLIC_BETTER_AUTH_URL="http://localhost:3000"
 
-# Para producción en Vercel
-# NEXT_PUBLIC_BETTER_AUTH_URL="https://tu-dominio.vercel.app"
+# Next.js Auth (opcional, para compatibilidad)
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="otro_secret_de_32_caracteres"
 
-# IMPORTANTE: En Vercel, configura estas variables directamente en:
-# Dashboard > Settings > Environment Variables
-# NO uses referencias a secretos como @database_url
+# Configuración de desarrollo
+NODE_ENV="development"
+
+# IMPORTANTE PARA VERCEL:
+# NO uses referencias como @database_url en vercel.json
+# Configura estas variables directamente en Vercel Dashboard:
+# Project Settings → Environment Variables

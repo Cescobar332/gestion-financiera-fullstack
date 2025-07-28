@@ -1,12 +1,13 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["iad1"],
   "functions": {
-    "pages/api/**/*.ts": {
+    "pages/api/**/*.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api-docs",
+      "destination": "/api-docs"
+    }
+  ]
 }
