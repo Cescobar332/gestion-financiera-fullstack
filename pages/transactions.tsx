@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 
 import Head from "next/head"
 import type { GetServerSideProps } from "next"
@@ -10,9 +9,10 @@ import { requireAuth, type AuthUser } from "@/lib/auth-utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TransactionForm } from "@/components/transactions/transaction-form"
+import { DeleteTransactionDialog } from "@/components/transactions/delete-transaction-dialog"
 import { Plus, Search, Edit, Trash2, TrendingUp, TrendingDown } from "lucide-react"
 
 interface Transaction {
@@ -36,14 +36,10 @@ export default function Transactions({ user }: TransactionsProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState<string>("all")
-  const [formData, setFormData] = useState({
-    concept: "",
-    amount: "",
-    date: new Date().toISOString().split("T")[0],
-    type: "INCOME" as "INCOME" | "EXPENSE",
-  })
 
   const isAdmin = user.role === "ADMIN"
 
@@ -72,9 +68,7 @@ export default function Transactions({ user }: TransactionsProps) {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
+  const handleCreateTransaction = async (formData: any) => {
       const response = await fetch("/api/transactions", {
         method: "POST",
         headers: {
@@ -85,19 +79,46 @@ export default function Transactions({ user }: TransactionsProps) {
 
       if (response.ok) {
         setShowForm(false)
-        setFormData({
-          concept: "",
-          amount: "",
-          date: new Date().toISOString().split("T")[0],
-          type: "INCOME",
-        })
+        fetchTransactions()
+    } else {
+      const data = await response.json()
+      throw new Error(data.error)
+    }
+  }
+
+  const handleUpdateTransaction = async (formData: any) => {
+    if (!editingTransaction) return
+
+    const response = await fetch(`/api/transactions/${editingTransaction.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    })
+
+    if (response.ok) {
+      setEditingTransaction(null)
         fetchTransactions()
       } else {
         const data = await response.json()
-        console.error("Error creating transaction:", data.error)
+        throw new Error(data.error)
       }
-    } catch (error) {
-      console.error("Error creating transaction:", error)
+    }
+
+  const handleDeleteTransaction = async () => {
+    if (!deletingTransaction) return
+
+    const response = await fetch(`/api/transactions/${deletingTransaction.id}`, {
+      method: "DELETE",
+    })
+
+    if (response.ok) {
+      setDeletingTransaction(null)
+      fetchTransactions()
+    } else {
+      const data = await response.json()
+      throw new Error(data.error)
     }
   }
 
@@ -200,73 +221,20 @@ export default function Transactions({ user }: TransactionsProps) {
             )}
           </div>
 
-          {/* New Transaction Form */}
-          {showForm && isAdmin && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Nueva Transacción</CardTitle>
-                <CardDescription>Agrega un nuevo ingreso o egreso</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="concept">Concepto</Label>
-                      <Input
-                        id="concept"
-                        value={formData.concept}
-                        onChange={(e) => setFormData({ ...formData, concept: e.target.value })}
-                        placeholder="Descripción de la transacción"
-                        required
+          {/* Transaction Form */}
+          {(showForm || editingTransaction) && isAdmin && (
+            <div className="mb-6">
+              <TransactionForm
+                transaction={editingTransaction}
+                onSubmit={editingTransaction ? handleUpdateTransaction : handleCreateTransaction}
+                onCancel={() => {
+                  setShowForm(false)
+                  setEditingTransaction(null)
+                }}
+                isEditing={!!editingTransaction}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="amount">Monto</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        step="0.01"
-                        value={formData.amount}
-                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                        placeholder="0.00"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="date">Fecha</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="type">Tipo</Label>
-                      <Select
-                        value={formData.type}
-                        onValueChange={(value: "INCOME" | "EXPENSE") => setFormData({ ...formData, type: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="INCOME">Ingreso</SelectItem>
-                          <SelectItem value="EXPENSE">Egreso</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="submit">Crear Transacción</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                      Cancelar
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+                    
           )}
 
           {/* Transactions Table */}
@@ -327,10 +295,10 @@ export default function Transactions({ user }: TransactionsProps) {
                         {isAdmin && (
                           <TableCell>
                             <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline" size="sm" onClick={() => setEditingTransaction(transaction)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline" size="sm" onClick={() => setDeletingTransaction(transaction)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -343,6 +311,14 @@ export default function Transactions({ user }: TransactionsProps) {
               )}
             </CardContent>
           </Card>
+
+          {/* Delete Dialog */}
+          <DeleteTransactionDialog
+            transaction={deletingTransaction}
+            open={!!deletingTransaction}
+            onOpenChange={(open) => !open && setDeletingTransaction(null)}
+            onConfirm={handleDeleteTransaction}
+          />
         </div>
       </Layout>
     </>
