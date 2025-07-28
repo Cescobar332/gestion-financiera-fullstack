@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,11 +33,22 @@ interface UserFormProps {
 
 export function UserForm({ user, open, onOpenChange, onSubmit }: UserFormProps) {
   const [formData, setFormData] = useState({
-    name: user?.name || "",
-    phone: user?.phone || "",
-    role: user?.role || "USER",
+    name: "",
+    phone: "",
+    role: "USER",
   })
   const [isLoading, setIsLoading] = useState(false)
+
+  // Actualizar formData cuando cambie el usuario
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        phone: user.phone || "",
+        role: user.role || "USER",
+      })
+    }
+  }, [user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

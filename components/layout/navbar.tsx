@@ -7,7 +7,7 @@ import { UserMenu } from "@/components/auth/user-menu"
 import { SignInButton } from "@/components/auth/signin-button"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Home, DollarSign, Users, BarChart3, Menu, X } from "lucide-react"
+import { Home, DollarSign, Users, BarChart3, Menu, X, Book } from "lucide-react"
 import { useState } from "react"
 
 const navigation = [
@@ -15,6 +15,7 @@ const navigation = [
   { name: "Ingresos/Egresos", href: "/transactions", icon: DollarSign, public: false },
   { name: "Usuarios", href: "/admin/users", icon: Users, adminOnly: true },
   { name: "Reportes", href: "/admin/reports", icon: BarChart3, adminOnly: true },
+  { name: "API Docs", href: "/api-docs", icon: Book, public: true },
 ]
 
 export function Navbar() {
