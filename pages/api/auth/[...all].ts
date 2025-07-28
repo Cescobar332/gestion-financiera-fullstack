@@ -119,8 +119,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           `session-token=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`,
         )
 
-        console.log("Session created, redirecting to dashboard")
-        return res.redirect(302, "/dashboard")
+        console.log("Session created, redirecting to home")
+        // Cambiar redirección a la página principal en lugar del dashboard
+        return res.redirect(302, "/")
       } catch (error) {
         console.error("Error in GitHub callback:", error)
         return res.status(500).json({ error: "Authentication failed" })

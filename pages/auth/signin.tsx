@@ -13,7 +13,8 @@ export default function SignIn() {
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      router.push("/dashboard")
+      console.log("Usuario autenticado, redirigiendo a home")
+      router.push("/")
     }
   }, [isAuthenticated, isLoading, router])
 
@@ -29,7 +30,13 @@ export default function SignIn() {
   }
 
   if (isAuthenticated) {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground">Redirigiendo...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
